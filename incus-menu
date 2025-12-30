@@ -74,10 +74,10 @@ while true; do
     upgrade)
         clear
         term_title "Incus apt upgrade: ${container}"
-        incus exec "${container}" -- /bin/sh -c "/usr/bin/apt update ; /usr/bin/apt upgrade && /usr/bin/apt autoremove"
+        incus exec "${container}" -- /bin/sh -c "/usr/bin/apt update ; /usr/bin/apt upgrade && /usr/bin/apt autoremove" || sleep 3
         ;;
     edit-config)
-        incus config edit "${container}"
+        incus config edit "${container}" || sleep 3
         ;;
     rename)
         container_new="$(dialog --inputbox "New container name" 0 0 "${container}" \
@@ -86,7 +86,7 @@ while true; do
         [ -n "$(incus list -fcompact,noheader -cn "^${container_new}"'$')" ] && { echo "${container_new} Already exists!"; sleep 3 ; continue; }
         incus rename "${container}" "${container_new}"
 
-        echo "${container_new}" | incus file edit "${container_new}/etc/hostname"
+        echo "${container_new}" | incus file edit "${container_new}/etc/hostname" || sleep 3
         ;;
     clone)
         container_new="$(dialog --inputbox "New container name" 0 0 "" \
@@ -94,7 +94,7 @@ while true; do
         [ -z "${container_new}" ] && continue
         incus copy "${container}" "${container_new}" || sleep 3
 
-        echo "${container_new}" | incus file edit "${container_new}/etc/hostname"
+        echo "${container_new}" | incus file edit "${container_new}/etc/hostname" || sleep 3
         ;;
     copy)
         # shellcheck disable=SC2046
