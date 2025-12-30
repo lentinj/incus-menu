@@ -14,12 +14,13 @@ maximise_menu () {
 }
 
 term_title () {
-    /bin/echo -ne "\033]0;$1\007"
+    printf "\033]0;%s\007" "$1"
 }
 
 while true; do
     # Choose a container
     term_title "Incus containers"
+    # shellcheck disable=SC2046
     container=$(dialog \
         --menu "Available containers (esc-esc to refresh)" $(maximise_menu) \
         "(renew all IPs)" "" \
@@ -31,7 +32,7 @@ while true; do
 
     [ "${container}" = "(renew all IPs)" ] && {
         for container in $(incus list -fcompact -cns | awk '/RUNNING\s*$/ { print $1 }'); do
-            echo === $container ====
+            echo "=== $container ==="
             incus exec "${container}" -- systemctl restart systemd-networkd
         done
         continue
@@ -44,6 +45,7 @@ while true; do
     menu_title="Container $container currently $container_status"
     case $container_status in
     RUNNING)
+        # shellcheck disable=SC2046
         container_operation=$(dialog --menu "$menu_title" $(maximise_menu) \
             attach "" \
             freeze "" \
@@ -56,6 +58,7 @@ while true; do
         container_operation="unfreeze"
         ;;
     STOPPED)
+        # shellcheck disable=SC2046
         container_operation=$(dialog --menu "$menu_title" $(maximise_menu) \
             start "" \
             rename "" \
@@ -89,20 +92,21 @@ while true; do
         container_new="$(dialog --inputbox "New container name" 0 0 "${container}" \
             3>&1 1>&2 2>&3)"
         [ -z "${container_new}" ] && continue
-        [ "$(incus list -cn ${container_new} parp | wc -l)" -eq "1" ] && { echo "${container_new} Already exists!"; sleep 3 ; continue; }
+        [ -n "$(incus list -fcompact,noheader -cn "^${container_new}$")" ] && { echo "${container_new} Already exists!"; sleep 3 ; continue; }
         incus rename "${container}" "${container_new}"
 
-        echo "${container_new}" | incus file edit ${container_new}/etc/hostname
+        echo "${container_new}" | incus file edit "${container_new}/etc/hostname"
         ;;
     clone)
         container_new="$(dialog --inputbox "New container name" 0 0 "" \
             3>&1 1>&2 2>&3)"
         [ -z "${container_new}" ] && continue
-        incus copy ${container} ${container_new} || sleep 3
+        incus copy "${container}" "${container_new}" || sleep 3
 
-        echo "${container_new}" | incus file edit ${container_new}/etc/hostname
+        echo "${container_new}" | incus file edit "${container_new}/etc/hostname"
         ;;
     copy)
+        # shellcheck disable=SC2046
         remote_name=$(dialog --menu "Remote to send to" $(maximise_menu) \
             $(incus remote list -fcompact,noheader --columns=aun | awk '/^\s+tls/ { print $3 " " $2 }') \
             3>&1 1>&2 2>&3)
