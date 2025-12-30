@@ -52,7 +52,7 @@ while true; do
             upgrade "" \
             console "" \
             stop "" \
-            3>&1 1>&2 2>&3)
+            3>&1 1>&2 2>&3 || echo "cancel")
         ;;
     FROZEN)
         container_operation="unfreeze"
@@ -65,7 +65,7 @@ while true; do
             "edit-config" "" \
             clone "" \
             copy "" \
-            3>&1 1>&2 2>&3)
+            3>&1 1>&2 2>&3 || echo "cancel")
         ;;
     *)
         echo "Unknown container state $container_status"
@@ -90,7 +90,7 @@ while true; do
         ;;
     rename)
         container_new="$(dialog --inputbox "New container name" 0 0 "${container}" \
-            3>&1 1>&2 2>&3)"
+            3>&1 1>&2 2>&3 || echo "")"
         [ -z "${container_new}" ] && continue
         [ -n "$(incus list -fcompact,noheader -cn "^${container_new}"'$')" ] && { echo "${container_new} Already exists!"; sleep 3 ; continue; }
         incus rename "${container}" "${container_new}"
@@ -99,7 +99,7 @@ while true; do
         ;;
     clone)
         container_new="$(dialog --inputbox "New container name" 0 0 "" \
-            3>&1 1>&2 2>&3)"
+            3>&1 1>&2 2>&3 || echo "")"
         [ -z "${container_new}" ] && continue
         incus copy "${container}" "${container_new}" || sleep 3
 
@@ -109,8 +109,13 @@ while true; do
         # shellcheck disable=SC2046
         remote_name=$(dialog --menu "Remote to send to" $(maximise_menu) \
             $(incus remote list -fcompact,noheader --columns=aun | awk '/^\s+tls/ { print $3 " " $2 }') \
-            3>&1 1>&2 2>&3)
+            3>&1 1>&2 2>&3 || echo "")
+        [ -z "${remote_name}" ] && continue
+
         incus copy "${container}" "${remote_name}:${container}" --instance-only || sleep 3
+        ;;
+    cancel)
+        # Do nothing, return to main menu
         ;;
     *)
         echo "Running incus ${container_operation} ${container}..."
