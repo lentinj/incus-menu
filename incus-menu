@@ -14,7 +14,7 @@ maximise_menu () {
 }
 
 term_title () {
-    printf "\033]0;%s\007" "$1"
+    printf "\033]0;%s: %s\007" "$(hostname -f)" "$1"
 }
 
 while true; do
