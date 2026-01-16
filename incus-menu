@@ -20,10 +20,11 @@ term_title () {
 while true; do
     # Choose a container
     term_title "Incus containers"
+    # NB: Multiple IP address spew onto several lines, filter them
     # shellcheck disable=SC2046
     container=$(dialog \
         --menu "Available containers (esc-esc to refresh, cancel to quit)" $(maximise_menu) \
-        $(incus list -fcompact --columns=ns4 | awk '!/^\s+NAME/ { print $1 " " $2 ($3 ? "/" $3 : "") }' | sort -k1) \
+        $(incus list -fcompact,noheader --columns=ns4 | awk '!/^\s\W/ { print $1 " " $2 ($3 ? "/" $3 : "") }' | sort -k1) \
         3>&1 1>&2 2>&3 || echo "(ERR:$?)")
     echo
     [ "${container}" = "(ERR:1)" ] && exit 0 # Cancel
